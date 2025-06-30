@@ -1,0 +1,15 @@
+# node_modules folder
+**/node_modules/
+
+# Environment variables
+**/.env
+
+# Build output
+**/dist/
+
+# Test coverage
+**/coverage/
+
+# Miscellaneous
+.DS_Store
+.env.*
