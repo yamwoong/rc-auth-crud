@@ -1,19 +1,20 @@
 import "reflect-metadata";
-import express, { Request, Response, NextFunction } from "express";
-import { errorHandler } from "@/middlewares/error.middleware";
+import { createExpressServer, useContainer } from "routing-controllers";
+import { Container } from "typedi";
+import { UserController } from "@/controllers/user.controller";
+import { HealthController } from "@/controllers/health.controller";
+import { ResponseWrapperInterceptor } from "@/interceptors/response.interceptor";
+import { ErrorHandler } from "@/middlewares/error.middleware";
 
-// Create express app instance
-const app = express();
+// Set routing-controllers to use typedi for dependency injection
+useContainer(Container);
 
-// Middleware for parsing JSON requests
-app.use(express.json());
-
-//// Basic health check route
-app.get("/", (req: Request, res: Response) => {
-  res.json({ result: "Hello World" });
+// Create express app via routing-controllers
+const app = createExpressServer({
+  controllers: [UserController, HealthController], // Register controllers
+  middlewares: [ErrorHandler], // Register global error handler
+  interceptors: [ResponseWrapperInterceptor], // Register response wrapper interceptor
 });
 
-app.use(errorHandler);
-
-// Export the app instance for server and testing
+// Export the app instance
 export default app;

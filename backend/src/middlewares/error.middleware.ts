@@ -1,32 +1,55 @@
-import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
+import {
+  ExpressErrorMiddlewareInterface,
+  Middleware,
+} from "routing-controllers";
+import { Request, Response, NextFunction } from "express";
 import { AppError } from "@/errors/app.error";
 import { ERROR } from "@/constants/errors";
 
 /**
- * Global error handling middleware.
- * - Catches all errors thrown in the app.
- * - Sends standardized JSON error responses.
- * - Handles both AppError and unknown errors.
+ * Global error handler middleware for API exceptions.
+ * Always responds with a consistent format: { data: null, message, code }
  */
-export const errorHandler: ErrorRequestHandler = (
-  err,
-  req,
-  res,
-  next
-): void => {
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      message: err.message,
-      code: err.statusCode,
+@Middleware({ type: "after" })
+export class ErrorHandler implements ExpressErrorMiddlewareInterface {
+  error(
+    error: unknown,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ): void {
+    if (error instanceof AppError) {
+      console.warn("[AppError]", error.message);
+
+      res.status(error.statusCode).json({
+        data: null,
+        message: error.message,
+        code: error.statusCode,
+      });
+      return;
+    }
+    if (error instanceof Error && error.name === "UnauthorizedError") {
+      console.warn("[JWT Error]", error.message);
+
+      res.status(401).json({
+        data: null,
+        message: "Authentication required.",
+        code: 401,
+      });
+      return;
+    }
+
+    if (error instanceof Error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[Unhandled Error]", error);
+      } else {
+        console.error("[Unhandled Error]", error.message);
+      }
+    }
+
+    res.status(ERROR.INTERNAL_SERVER_ERROR.code).json({
+      message: ERROR.INTERNAL_SERVER_ERROR.message,
+      code: ERROR.INTERNAL_SERVER_ERROR.code,
     });
-    return;
   }
-
-  console.error("UNHANDLED ERROR:", err);
-
-  res.status(ERROR.INTERNAL_SERVER_ERROR.code).json({
-    message: ERROR.INTERNAL_SERVER_ERROR.message,
-    code: ERROR.INTERNAL_SERVER_ERROR.code,
-  });
-  return;
-};
+}

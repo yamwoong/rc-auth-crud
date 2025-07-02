@@ -5,6 +5,9 @@ import { UserRepository } from "@/repositories/user.repository";
 import { IUser } from "@/models/user.model";
 import { ERROR } from "@/constants/errors";
 import { hashPassword } from "@/utils/password.utils";
+import { toUserResponseDto } from "@/mappers/user.mapper";
+import { UserResponseDto } from "@/dtos/user/user-response.dto";
+
 /**
  * @class UserService
  * Service layer for business logic related to Users.
@@ -15,20 +18,21 @@ export class UserService {
 
   /**
    * Get all users who are not soft-deleted.
-   * @returns Array of IUser documents
+   * @returns Array of UserResponseDto objects
    */
-  async getAllUsers(): Promise<IUser[]> {
-    return this.userRepository.findAll();
+  async getAllUsers(): Promise<UserResponseDto[]> {
+    const users = await this.userRepository.findAll();
+    return users.map(toUserResponseDto);
   }
 
   /**
    * Create a new user.
    * Throws 409 error if the email already exists.
    * @param userData - Partial user data (e.g., email, password, name)
-   * @returns The created IUser document
+   * @returns The created UserResponseDto object
    * @throws AppError(409) if email already exists
    */
-  async createUser(userData: Partial<IUser>): Promise<IUser> {
+  async createUser(userData: Partial<IUser>): Promise<UserResponseDto> {
     const existingUser = await this.userRepository.findByEmail(userData.email!);
     assertNotExists(
       existingUser,
@@ -40,7 +44,11 @@ export class UserService {
       ? await hashPassword(userData.password)
       : undefined;
 
-    return this.userRepository.create(userData);
+    const user = await this.userRepository.create({
+      ...userData,
+      password: passwordHash,
+    });
+    return toUserResponseDto(user);
   }
 
   /**
@@ -48,52 +56,56 @@ export class UserService {
    * Throws 404 error if user does not exist.
    * @param id - User document ID
    * @param updateData - Fields to update
-   * @returns Updated IUser document
+   * @returns Updated UserResponseDto object
    * @throws AppError(404) if user not found
    */
-  async updateUserById(id: string, updateData: Partial<IUser>): Promise<IUser> {
+  async updateUserById(
+    id: string,
+    updateData: Partial<IUser>
+  ): Promise<UserResponseDto> {
     const user = await this.userRepository.updateById(id, updateData);
     assertExists(user, ERROR.USER_NOT_FOUND.message, ERROR.USER_NOT_FOUND.code);
-    return user!;
+    return toUserResponseDto(user!);
   }
 
   /**
    * Soft delete a user by setting the deletedAt timestamp.
    * Throws 404 error if user does not exist.
    * @param id - User document ID
-   * @returns Updated IUser document with deletedAt set
+   * @returns Updated UserResponseDto object with deletedAt set
    * @throws AppError(404) if user not found
    */
-  async softDeleteUserById(id: string): Promise<IUser> {
+  async softDeleteUserById(id: string): Promise<UserResponseDto> {
     const user = await this.userRepository.softDeleteById(id);
     assertExists(user, ERROR.USER_NOT_FOUND.message, ERROR.USER_NOT_FOUND.code);
-    return user!;
+    return toUserResponseDto(user!);
   }
 
   /**
    * Get user by ID or throw 404 if not found.
    * @param id - User document ID
-   * @returns IUser document
+   * @returns UserResponseDto object
    * @throws AppError(404) if not found
    */
-  async getUserById(id: string): Promise<IUser> {
-    return getOrThrowById(
+  async getUserById(id: string): Promise<UserResponseDto> {
+    const user = await getOrThrowById(
       this.userRepository,
       id,
       ERROR.USER_NOT_FOUND.message,
       ERROR.USER_NOT_FOUND.code
     );
+    return toUserResponseDto(user);
   }
 
   /**
    * Get user by email or throw 404 if not found.
    * @param email - User's email
-   * @returns IUser document
+   * @returns UserResponseDto object
    * @throws AppError(404) if not found
    */
-  async getUserByEmail(email: string): Promise<IUser> {
+  async getUserByEmail(email: string): Promise<UserResponseDto> {
     const user = await this.userRepository.findByEmail(email);
     assertExists(user, ERROR.USER_NOT_FOUND.message, ERROR.USER_NOT_FOUND.code);
-    return user!;
+    return toUserResponseDto(user!);
   }
 }
