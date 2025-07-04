@@ -11,7 +11,7 @@ export function assertExists<T>(
   entity: T | null | undefined,
   message: string,
   code = 404
-): asserts entity is T {
+): asserts entity is NonNullable<T> {
   if (entity === null || entity === undefined) {
     throw new AppError(message, code);
   }

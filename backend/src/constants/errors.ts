@@ -6,6 +6,11 @@ export const ERROR = {
   POST_NOT_FOUND: { code: 404, message: "Post not found" },
   POST_ALREADY_DELETED: { code: 410, message: "Post already deleted" },
   INVALID_CREDENTIALS: { code: 401, message: "Invalid email or password" },
+  INVALID_LOGIN: { code: 401, message: "Invalid email or password" },
+  INVALID_REFRESH_TOKEN: {
+    code: 401,
+    message: "Invalid or expired refresh token",
+  },
   VALIDATION_ERROR: { code: 400, message: "Validation error" },
   BAD_REQUEST: { code: 400, message: "Bad request" },
   FORBIDDEN: { code: 403, message: "Forbidden" },

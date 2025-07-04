@@ -11,7 +11,7 @@ import { ERROR } from "@/constants/errors";
  */
 export async function hashPassword(password: string): Promise<string> {
   try {
-    return argon2.hash(password);
+    return await argon2.hash(password);
   } catch (err) {
     throw new AppError(
       ERROR.INTERNAL_SERVER_ERROR.message,
@@ -33,7 +33,7 @@ export async function verifyPassword(
   hash: string
 ): Promise<boolean> {
   try {
-    return argon2.verify(hash, password);
+    return await argon2.verify(hash, password);
   } catch (err) {
     throw new AppError(
       ERROR.INTERNAL_SERVER_ERROR.message,

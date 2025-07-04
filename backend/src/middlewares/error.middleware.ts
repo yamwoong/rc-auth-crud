@@ -2,6 +2,7 @@ import {
   ExpressErrorMiddlewareInterface,
   Middleware,
 } from "routing-controllers";
+import { Service } from "typedi";
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "@/errors/app.error";
 import { ERROR } from "@/constants/errors";
@@ -11,6 +12,7 @@ import { ERROR } from "@/constants/errors";
  * Always responds with a consistent format: { data: null, message, code }
  */
 @Middleware({ type: "after" })
+@Service()
 export class ErrorHandler implements ExpressErrorMiddlewareInterface {
   error(
     error: unknown,
