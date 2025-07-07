@@ -14,17 +14,18 @@ export class AppError extends Error {
    * @param statusCode - HTTP status code (default: 500)
    * @param isOperational - Flag for operational errors (default: true)
    */
-
   constructor(message: string, statusCode = 500, isOperational = true) {
     super(message);
 
-    // Set the prototype explicitly (for Error inheritance in TypeScript)
     Object.setPrototypeOf(this, new.target.prototype);
 
+    this.name = "AppError";
     this.statusCode = statusCode;
     this.isOperational = isOperational;
 
-    // Capture stack trace (for better debugging)
-    Error.captureStackTrace(this);
+    // Better stack trace (Node.js)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 }

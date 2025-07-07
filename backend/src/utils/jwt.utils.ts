@@ -1,6 +1,7 @@
-import jwt, { Secret, JwtPayload } from "jsonwebtoken";
+import jwt, { Secret } from "jsonwebtoken";
 import { AppError } from "@/errors/app.error";
 import { ERROR } from "@/constants/errors";
+import { AuthTokenPayload } from "@/types/auth.type";
 
 const ACCESS_SECRET: Secret =
   process.env.JWT_ACCESS_SECRET || "access_secret_key";
@@ -19,7 +20,7 @@ const REFRESH_EXPIRES_IN = "7d";
  * @param payload - User data to include in the token (e.g., { id, email, role })
  * @returns Signed JWT access token string
  */
-export function generateAccessToken(payload: object): string {
+export function generateAccessToken(payload: AuthTokenPayload): string {
   return jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
 }
 
@@ -28,7 +29,7 @@ export function generateAccessToken(payload: object): string {
  * @param payload - User data to include in the token (e.g., { id, email, role })
  * @returns Signed JWT refresh token string
  */
-export function generateRefreshToken(payload: object): string {
+export function generateRefreshToken(payload: AuthTokenPayload): string {
   return jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES_IN });
 }
 
@@ -43,9 +44,9 @@ export function generateRefreshToken(payload: object): string {
  * @returns Decoded payload if valid
  * @throws AppError(401) if token is invalid or expired
  */
-export function verifyAccessToken(token: string): object {
+export function verifyAccessToken(token: string): AuthTokenPayload {
   try {
-    return jwt.verify(token, ACCESS_SECRET) as JwtPayload;
+    return jwt.verify(token, ACCESS_SECRET) as AuthTokenPayload;
   } catch (err) {
     throw new AppError(ERROR.INVALID_TOKEN.message, ERROR.INVALID_TOKEN.code);
   }
@@ -58,9 +59,9 @@ export function verifyAccessToken(token: string): object {
  * @returns Decoded payload if valid
  * @throws AppError(401) if token is invalid or expired
  */
-export function verifyRefreshToken(token: string): object {
+export function verifyRefreshToken(token: string): AuthTokenPayload {
   try {
-    return jwt.verify(token, REFRESH_SECRET) as JwtPayload;
+    return jwt.verify(token, REFRESH_SECRET) as AuthTokenPayload;
   } catch (err) {
     throw new AppError(ERROR.INVALID_TOKEN.message, ERROR.INVALID_TOKEN.code);
   }

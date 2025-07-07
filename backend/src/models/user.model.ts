@@ -8,11 +8,13 @@ import { UserSchema } from "@/schemas/user.schema";
  */
 
 export interface IUser extends Document {
+  _id: string;
   email: string;
   password?: string | null;
   name: string;
   provider: "local" | "google";
   googleId?: string | null;
+  refreshToken?: string | null;
   role: "user" | "admin";
   createdAt: Date;
   updatedAt: Date;

@@ -14,6 +14,7 @@ const app = createExpressServer({
   controllers: [UserController, HealthController], // Register controllers
   middlewares: [ErrorHandler], // Register global error handler
   interceptors: [ResponseWrapperInterceptor], // Register response wrapper interceptor
+  defaultErrorHandler: false,
 });
 
 // Export the app instance

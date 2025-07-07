@@ -14,6 +14,7 @@ import { UserService } from "@/services/user.service";
 import { CreateUserDto } from "@/dtos/user/create-user.dto";
 import { UpdateUserDto } from "@/dtos/user/update-user.dto";
 import { UserResponseDto } from "@/dtos/user/user-response.dto";
+import { toUserResponseDto } from "@/mappers/user.mapper";
 
 /**
  * Handles all user-related API endpoints (CRUD).
@@ -35,7 +36,8 @@ export class UserController {
   })
   @ResponseSchema(UserResponseDto, { isArray: true })
   async getAll() {
-    return this.userService.getAllUsers();
+    const users = await this.userService.getAllUsers();
+    return users.map(toUserResponseDto);
   }
 
   /**
@@ -50,7 +52,8 @@ export class UserController {
   })
   @ResponseSchema(UserResponseDto)
   async create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.createUser(createUserDto);
+    const user = await this.userService.createUser(createUserDto);
+    return toUserResponseDto(user);
   }
 
   /**
@@ -65,7 +68,8 @@ export class UserController {
   })
   @ResponseSchema(UserResponseDto)
   async getById(@Param("id") id: string) {
-    return this.userService.getUserById(id);
+    const user = await this.userService.getUserById(id);
+    return toUserResponseDto(user);
   }
 
   /**
@@ -81,7 +85,8 @@ export class UserController {
   })
   @ResponseSchema(UserResponseDto)
   async update(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.updateUserById(id, updateUserDto);
+    const user = await this.userService.updateUserById(id, updateUserDto);
+    return toUserResponseDto(user);
   }
 
   /**
@@ -99,5 +104,6 @@ export class UserController {
   })
   async softDelete(@Param("id") id: string) {
     await this.userService.softDeleteUserById(id);
+    return undefined;
   }
 }

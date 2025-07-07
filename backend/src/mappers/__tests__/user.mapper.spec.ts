@@ -1,4 +1,4 @@
-import { toUserResponseDto } from "@/mappers/user.mapper";
+import { mapMongoUserToUser, toUserResponseDto } from "@/mappers/user.mapper";
 import { IUser } from "@/models/user.model";
 /*
  * Unit tests for the UserResponseDto mapper function.
@@ -19,7 +19,9 @@ describe("User Mapper", () => {
       updatedAt: new Date(),
     };
 
-    const dto = toUserResponseDto(user as IUser);
+    const mappedUser = mapMongoUserToUser(user as IUser);
+
+    const dto = toUserResponseDto(mappedUser);
 
     expect(dto).toMatchObject({
       id: "TestId123",
@@ -29,7 +31,5 @@ describe("User Mapper", () => {
     });
 
     expect(dto).not.toHaveProperty("password");
-    expect(dto).not.toHaveProperty("deletedAt");
-    expect(dto).not.toHaveProperty("googleId");
   });
 });

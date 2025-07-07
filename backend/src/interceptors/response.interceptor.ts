@@ -18,7 +18,10 @@ export class ResponseWrapperInterceptor implements InterceptorInterface {
   intercept(
     _action: Action,
     result: unknown
-  ): { data: unknown; message: string; code: number } {
+  ): { data: unknown; message: string; code: number } | undefined {
+    if (result === undefined) {
+      return undefined;
+    }
     if (
       typeof result === "object" &&
       result !== null &&

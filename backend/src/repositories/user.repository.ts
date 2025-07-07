@@ -72,4 +72,23 @@ export class UserRepository {
       { new: true }
     ).exec();
   }
+
+  /**
+   * Find a user by Google ID (for Google OAuth login).
+   * @param googleId - User's Google account ID
+   * @returns User document or null
+   */
+  async findByGoogleId(googleId: string): Promise<IUser | null> {
+    return UserModel.findOne({ provider: "google", googleId }).exec();
+  }
+
+  /**
+   * Create a new user with Google provider.
+   * @param userData - Partial user data from Google profile
+   * @returns The created User document
+   */
+  async createGoogleUser(userData: Partial<IUser>): Promise<IUser> {
+    const user = new UserModel(userData);
+    return user.save();
+  }
 }

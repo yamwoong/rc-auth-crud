@@ -4,7 +4,7 @@ import { AuthResponseDto } from "@/dtos/auth/auth-response.dto";
 import { UserRepository } from "@/repositories/user.repository";
 import { AuthRepository } from "@/repositories/auth.repository";
 import { ERROR } from "@/constants/errors";
-import { assertExists } from "@/utils/assert.utils";
+import { assertExists, assertHasGoogleProfileInfo } from "@/utils/assert.utils";
 import { verifyPassword } from "@/utils/password.utils";
 import {
   generateAccessToken,
@@ -104,6 +104,44 @@ export class AuthService {
     return plainToInstance(AuthResponseDto, {
       accessToken,
       expiresIn: 60 * 15, // 15 minutes
+    });
+  }
+
+  /**
+   * Authenticates or registers a user using Google OAuth profile.
+   * Throws if required profile fields are missing.
+   * @param profile - Google OAuth profile object
+   * @returns AuthResponseDto (accessToken, refreshToken, expiresIn)
+   */
+  async loginWithGoogle(profile: {
+    id: string;
+    email?: string;
+    name?: string;
+  }): Promise<AuthResponseDto> {
+    assertHasGoogleProfileInfo(profile);
+
+    let user = await this.userRepository.findByGoogleId(profile.id);
+
+    if (!user) {
+      user = await this.userRepository.createGoogleUser({
+        email: profile.email,
+        name: profile.name,
+        provider: "google",
+        googleId: profile.id,
+      });
+    }
+
+    const payload = { id: user._id, email: user.email, role: user.role };
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return plainToInstance(AuthResponseDto, {
+      accessToken,
+      refreshToken,
+      expiresIn: 60 * 15,
     });
   }
 }

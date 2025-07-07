@@ -1,5 +1,3 @@
-// src/services/__tests__/user.service.spec.ts
-
 import { UserService } from "@/services/user.service";
 import { UserRepository } from "@/repositories/user.repository";
 import { AppError } from "@/errors/app.error";
@@ -16,8 +14,13 @@ const mockUserRepository = {
   create: jest.fn(),
   updateById: jest.fn(),
   softDeleteById: jest.fn(),
-  findById: jest.fn(), // add for getOrThrowById (if needed)
+  findById: jest.fn(),
 };
+
+const validId1 = "507f1f77bcf86cd799439011";
+const validId2 = "507f1f77bcf86cd799439012";
+const validId3 = "507f1f77bcf86cd799439013";
+const notFoundId = "507f1f77bcf86cd799439099";
 
 describe("UserService", () => {
   let userService: UserService;
@@ -32,8 +35,8 @@ describe("UserService", () => {
   // getAllUsers
   it("should return all users", async () => {
     mockUserRepository.findAll.mockResolvedValue([
-      { _id: "1", email: "a@test.com" },
-      { _id: "2", email: "b@test.com" },
+      { _id: validId1, email: "a@test.com" },
+      { _id: validId2, email: "b@test.com" },
     ]);
     const users = await userService.getAllUsers();
     expect(users).toHaveLength(2);
@@ -44,7 +47,7 @@ describe("UserService", () => {
   it("should create a new user if email does not exist", async () => {
     mockUserRepository.findByEmail.mockResolvedValue(null);
     mockUserRepository.create.mockResolvedValue({
-      _id: "3",
+      _id: validId3,
       email: "new@example.com",
       name: "Tester",
       role: "user",
@@ -69,7 +72,7 @@ describe("UserService", () => {
   // createUser - duplicate email
   it("should throw AppError if email already exists", async () => {
     mockUserRepository.findByEmail.mockResolvedValue({
-      _id: "4",
+      _id: validId2,
       email: "dupe@example.com",
     });
 
@@ -85,36 +88,33 @@ describe("UserService", () => {
   // getUserById - success
   it("should return user by id", async () => {
     mockUserRepository.findById.mockResolvedValue({
-      _id: "1",
+      _id: validId1,
       email: "a@test.com",
       name: "A",
       role: "user",
       createdAt: new Date(),
     });
 
-    // If your service uses getOrThrowById, ensure it calls findById internally.
-    // You may need to mock getOrThrowById separately depending on your util implementation.
-    // Here, we assume findById is used.
-    const user = await userService.getUserById("1");
+    const user = await userService.getUserById(validId1);
     expect(user).toHaveProperty("email", "a@test.com");
   });
 
   // getUserById - not found
   it("should throw AppError if user not found by id", async () => {
     mockUserRepository.findById.mockResolvedValue(null);
-    await expect(userService.getUserById("404")).rejects.toThrow(AppError);
+    await expect(userService.getUserById(notFoundId)).rejects.toThrow(AppError);
   });
 
   // updateUserById - success
   it("should update user by id", async () => {
     mockUserRepository.updateById.mockResolvedValue({
-      _id: "1",
+      _id: validId1,
       email: "updated@test.com",
       name: "Updated",
       role: "user",
       createdAt: new Date(),
     });
-    const updated = await userService.updateUserById("1", {
+    const updated = await userService.updateUserById(validId1, {
       email: "updated@test.com",
     });
     expect(updated).toHaveProperty("email", "updated@test.com");
@@ -124,23 +124,23 @@ describe("UserService", () => {
   it("should throw AppError if user not found on update", async () => {
     mockUserRepository.updateById.mockResolvedValue(null);
     await expect(
-      userService.updateUserById("404", { email: "none@test.com" })
+      userService.updateUserById(notFoundId, { email: "none@test.com" })
     ).rejects.toThrow(AppError);
   });
 
   // softDeleteUserById - success
   it("should soft delete user by id", async () => {
     mockUserRepository.softDeleteById.mockResolvedValue({
-      _id: "1",
+      _id: validId1,
       email: "deleted@test.com",
       deletedAt: new Date(),
       name: "Deleted",
       role: "user",
       createdAt: new Date(),
     });
-    const deleted = await userService.softDeleteUserById("1");
+    const deleted = await userService.softDeleteUserById(validId1);
     expect(deleted).toMatchObject({
-      id: "1",
+      id: validId1,
       email: "deleted@test.com",
       name: "Deleted",
       role: "user",
@@ -150,7 +150,7 @@ describe("UserService", () => {
   // softDeleteUserById - not found
   it("should throw AppError if user not found on soft delete", async () => {
     mockUserRepository.softDeleteById.mockResolvedValue(null);
-    await expect(userService.softDeleteUserById("404")).rejects.toThrow(
+    await expect(userService.softDeleteUserById(notFoundId)).rejects.toThrow(
       AppError
     );
   });
@@ -158,7 +158,7 @@ describe("UserService", () => {
   // getUserByEmail - success
   it("should return user by email", async () => {
     mockUserRepository.findByEmail.mockResolvedValue({
-      _id: "1",
+      _id: validId1,
       email: "found@test.com",
       name: "Found",
       role: "user",

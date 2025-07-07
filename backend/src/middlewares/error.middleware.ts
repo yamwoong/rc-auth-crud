@@ -26,7 +26,7 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
       res.status(error.statusCode).json({
         data: null,
         message: error.message,
-        code: error.statusCode,
+        statusCode: error.statusCode,
       });
       return;
     }
@@ -36,7 +36,7 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
       res.status(401).json({
         data: null,
         message: "Authentication required.",
-        code: 401,
+        statusCode: 401,
       });
       return;
     }
@@ -50,8 +50,9 @@ export class ErrorHandler implements ExpressErrorMiddlewareInterface {
     }
 
     res.status(ERROR.INTERNAL_SERVER_ERROR.code).json({
+      data: null,
       message: ERROR.INTERNAL_SERVER_ERROR.message,
-      code: ERROR.INTERNAL_SERVER_ERROR.code,
+      statusCode: ERROR.INTERNAL_SERVER_ERROR.code,
     });
   }
 }
