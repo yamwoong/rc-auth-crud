@@ -1,8 +1,11 @@
 import { Service } from "typedi";
+import { randomBytes } from "crypto";
+import { hashPassword } from "@/utils/password.utils";
 import { LoginDto } from "@/dtos/auth/login.dto";
 import { AuthResponseDto } from "@/dtos/auth/auth-response.dto";
 import { UserRepository } from "@/repositories/user.repository";
 import { AuthRepository } from "@/repositories/auth.repository";
+import { sendMail } from "@/utils/email.utils";
 import { ERROR } from "@/constants/errors";
 import { assertExists, assertHasGoogleProfileInfo } from "@/utils/assert.utils";
 import { verifyPassword } from "@/utils/password.utils";
@@ -143,5 +146,52 @@ export class AuthService {
       refreshToken,
       expiresIn: 60 * 15,
     });
+  }
+
+  /**
+   * Sends a password reset email to the user.
+   * - Finds the user by email.
+   * - Generates a secure random token and expiration time.
+   * - Saves the token and expiration date in the database.
+   * - Sends an email to the user with a reset password link.
+   * @param email - User's email address for password reset.
+   * @returns void
+   * @throws AppError(404) if the user is not found.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.userRepository.findByEmail(email);
+    assertExists(user, ERROR.USER_NOT_FOUND.message, ERROR.USER_NOT_FOUND.code);
+
+    const token = randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
+    await this.userRepository.setPasswordResetToken(user._id, token, expires);
+
+    const resetLink = `https://your-app.com/reset-password?token=${token}`;
+    await sendMail(
+      user.email,
+      "Password Reset Request",
+      `<a href="${resetLink}">Click here to reset your password</a>`
+    );
+  }
+
+  /**
+   * Resets the user's password using a valid reset token.
+   * - Finds the user by the reset token and checks expiration.
+   * - Hashes and updates the user's password.
+   * - Removes the reset token and expiration date from the database.
+   * @param token - Password reset token received by the user.
+   * @param newPassword - New password to set.
+   * @returns void
+   * @throws AppError(400) if the token is invalid or expired.
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.findByPasswordResetToken(token);
+    assertExists(user, ERROR.INVALID_TOKEN.message, ERROR.INVALID_TOKEN.code);
+
+    user.password = await hashPassword(newPassword);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpires = undefined;
+    await user.save();
   }
 }

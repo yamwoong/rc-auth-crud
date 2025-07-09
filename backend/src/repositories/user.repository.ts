@@ -91,4 +91,54 @@ export class UserRepository {
     const user = new UserModel(userData);
     return user.save();
   }
+
+  /**
+   * Sets/reset password reset token & expiration for user.
+   * @param userId - User's MongoDB ID
+   * @param token - Reset token string
+   * @param expires - Expiration date (Date)
+   * @returns Updated user document or null
+   */
+  async setPasswordResetToken(
+    userId: string,
+    token: string,
+    expires: Date
+  ): Promise<IUser | null> {
+    return UserModel.findByIdAndUpdate(
+      userId,
+      {
+        resetPasswordToken: token,
+        resetPasswordTokenExpires: expires,
+      },
+      { new: true }
+    ).exec();
+  }
+
+  /**
+   * Finds a user by password reset token and checks expiration.
+   * @param token - Password reset token string
+   * @returns User document or null
+   */
+  async findByPasswordResetToken(token: string): Promise<IUser | null> {
+    const now = new Date();
+    return UserModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordTokenExpires: { $gt: now },
+    }).exec();
+  }
+
+  /**
+   * Clears the password reset token for a user.
+   * @param userId - User's MongoDB ID
+   * @returns Updated user document or null
+   */
+  async clearPasswordResetToken(userId: string): Promise<IUser | null> {
+    return UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $unset: { resetPasswordToken: 1, resetPasswordTokenExpires: 1 },
+      },
+      { new: true }
+    ).exec();
+  }
 }

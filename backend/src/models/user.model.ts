@@ -19,6 +19,8 @@ export interface IUser extends Document {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
+  resetPasswordToken?: string | null;
+  resetPasswordTokenExpires?: Date | null;
 }
 
 /**

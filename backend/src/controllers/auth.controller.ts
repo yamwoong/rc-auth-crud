@@ -1,5 +1,6 @@
 import {
   JsonController,
+  Get,
   Post,
   Req,
   Res,
@@ -19,6 +20,9 @@ import {
 } from "@/utils/cookies.utils";
 import { OpenAPI, ResponseSchema } from "routing-controllers-openapi";
 import { ERROR } from "@/constants/errors";
+import passport from "passport";
+import { RequestPasswordResetDto } from "@/dtos/auth/request-password-reset.dto";
+import { ResetPasswordDto } from "@/dtos/auth/reset-password.dto";
 
 /**
  * Handles authentication endpoints (login, refresh, logout)
@@ -115,6 +119,95 @@ export class AuthController {
     return res.json({
       data: null,
       message: "Logged out successfully",
+      code: 200,
+    });
+  }
+
+  /**
+   * Google OAuth login entrypoint
+   * @route GET /auth/google
+   */
+  @Get("/google")
+  @UseBefore(
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      session: false,
+    })
+  )
+  async googleLogin() {
+    // No implementation needed, passport handles redirect
+  }
+
+  /**
+   * Google OAuth callback
+   * @route GET /auth/google/callback
+   */
+  @Get("/google/callback")
+  @UseBefore(
+    passport.authenticate("google", {
+      session: false,
+      failureRedirect: "/login",
+    })
+  )
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
+    const profile = req.user as {
+      id: string;
+      email?: string;
+      name?: string;
+    };
+
+    const result = await this.authService.loginWithGoogle(profile);
+    setRefreshTokenCookie(res, result.refreshToken!);
+
+    return res.json({
+      data: {
+        accessToken: result.accessToken,
+        expiresIn: result.expiresIn,
+      },
+      message: "Google login success",
+      code: 200,
+    });
+  }
+
+  /**
+   * Request password reset email
+   * @route POST /auth/forgot-password
+   * @returns message
+   */
+  @Post("/forgot-password")
+  @HttpCode(200)
+  @OpenAPI({
+    summary: "Request password reset email",
+    description: "Sends a password reset link to user's email.",
+  })
+  async forgotPassword(
+    @Body() body: RequestPasswordResetDto,
+    @Res() res: Response
+  ) {
+    await this.authService.requestPasswordReset(body.email);
+    return res.json({
+      data: null,
+      message: "If this email exists, a reset link has been sent.",
+      code: 200,
+    });
+  }
+
+  /**
+   * Reset password using token from email
+   * @route POST /auth/reset-password
+   * @returns message
+   */
+  @Post("/reset-password")
+  @HttpCode(200)
+  @OpenAPI({
+    summary: "Reset password",
+    description: "Resets user's password using reset token.",
+  })
+  async resetPassword(@Body() body: ResetPasswordDto, @Res() res: Response) {
+    await this.authService.resetPassword(body.token, body.newPassword);
+    return res.json({
+      data: null,
+      message: "Password has been reset successfully.",
       code: 200,
     });
   }
